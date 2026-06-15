@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { loadAppData, saveAppData, DEFAULT_SETTINGS, DEFAULT_GAMIFICATION } from '../utils/storage';
+import { loadAppData, saveAppData, saveGeminiApiKey, DEFAULT_SETTINGS, DEFAULT_GAMIFICATION } from '../utils/storage';
 import { xpForRating, levelFromXp, checkAchievements } from '../utils/gamification';
 import { computeInsights } from '../utils/insights';
 
@@ -347,6 +347,9 @@ export function useFlashcards() {
   const markWrong = markAgain;
 
   function updateSettings(partial) {
+    if ('geminiApiKey' in partial) {
+      saveGeminiApiKey(partial.geminiApiKey ?? '');
+    }
     setSettings((s) => ({ ...s, ...partial }));
   }
 

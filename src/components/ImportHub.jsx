@@ -123,7 +123,7 @@ export function ImportHub({
         )}
         {!hasStructuredFormat && !settings.geminiApiKey && hasText && (
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
-            Para texto livre, configure a chave Gemini em Config. Ou use Importar DOCX acima.
+            Para gerar com IA, cada pessoa precisa colocar a <strong>própria chave</strong> em Config → Chave Gemini (fica só no seu computador). Ou use DOCX / formato Pergunta:Resposta:.
           </p>
         )}
         {aiError && <p className="text-xs text-red-500 mt-2">⚠️ {aiError}</p>}
