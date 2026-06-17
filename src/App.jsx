@@ -133,7 +133,7 @@ export default function App() {
     <ExamMode examFinished examAnswers={fc.examAnswers} sessionCards={fc.sessionCards} onFinish={fc.closeExamResults} />
   ) : showExam ? (
     <ExamMode {...examModeProps} />
-  ) : studyActive && fc.sessionCards.length === 0 ? (
+  ) : studyActive && (fc.sessionFinished || fc.sessionCards.length === 0) ? (
     <div className="bg-white dark:bg-slate-800 rounded-3xl p-12 text-center shadow-xl">
       <p className="text-5xl mb-4">🎉</p>
       <h2 className="text-2xl font-bold mb-2">Sessão concluída!</h2>
@@ -186,16 +186,12 @@ export default function App() {
               <StudyModes
                 onStartReview={fc.startReview}
                 onStartErrors={fc.startErrors}
-                onStartLeeches={fc.startLeeches}
-                onStartPomodoro={fc.startPomodoro}
                 onStartExam={fc.startExam}
                 studyMode={fc.studyMode}
-                pomodoroRemaining={fc.pomodoroRemaining}
                 onStop={fc.stopReview}
                 counts={{
                   due: fc.dueCards.length,
                   errors: fc.errorCards.length,
-                  leeches: fc.leechCards.length,
                   total: fc.filteredCards.length,
                 }}
               />

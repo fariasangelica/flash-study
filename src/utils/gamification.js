@@ -8,7 +8,6 @@ export const ACHIEVEMENTS = [
   { id: 'reviews_100', icon: '🏆', title: 'Mestre', desc: '100 revisões totais' },
   { id: 'daily_goal', icon: '✅', title: 'Meta do dia', desc: 'Bateu a meta diária' },
   { id: 'import_deck', icon: '📄', title: 'Importador', desc: 'Importou um deck' },
-  { id: 'leech_hunter', icon: '🩸', title: 'Caçador de leeches', desc: 'Revisou um card leech' },
 ];
 
 export function xpForRating(rating) {
@@ -40,7 +39,6 @@ export function checkAchievements(ctx) {
   if (ctx.totalReviews >= 100) add('reviews_100');
   if (ctx.dailyReviewsToday >= ctx.dailyGoal) add('daily_goal');
   if (ctx.importedDeck) add('import_deck');
-  if (ctx.reviewedLeech) add('leech_hunter');
 
   return [...unlocked];
 }

@@ -26,7 +26,6 @@ export function StatsPanel({ stats, cards }) {
             const nextReview = nextDates[0] ? formatNextReview(nextDates[0]) : null;
 
             const totalLapses = categoryCards.reduce((a, c) => a + (c.sm2Lapses ?? 0), 0);
-            const leechCount = categoryCards.filter((c) => c.sm2Leech).length;
             const relearningCount = categoryCards.filter((c) => c.sm2Relearning).length;
 
             const attempted = categoryCards.filter((c) => c.firstAttemptResult !== undefined);
@@ -107,12 +106,7 @@ export function StatsPanel({ stats, cards }) {
                     )}
                     {totalLapses > 0 && (
                       <span className="bg-slate-100 text-slate-500 text-xs font-semibold px-2 py-1 rounded-lg">
-                        ↩️ {totalLapses} lapses
-                      </span>
-                    )}
-                    {leechCount > 0 && (
-                      <span className="bg-red-50 text-red-600 text-xs font-bold px-2 py-1 rounded-lg">
-                        🩸 {leechCount} leech{leechCount > 1 ? 'es' : ''}
+                        ↩️ {totalLapses} erros
                       </span>
                     )}
                   </div>

@@ -6,7 +6,6 @@ import { computeInsights } from '../utils/insights';
 const DEFAULT_EASE = 2.5;
 const MIN_EASE = 1.3;
 const DEFAULT_NEW_LIMIT = 20;
-const POMODORO_MS = 25 * 60 * 1000;
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -35,7 +34,6 @@ function applyAgain(card) {
     sm2NextReview: todayStr(),
     sm2Lapses: lapses,
     sm2Relearning: wasLearned,
-    sm2Leech: lapses >= 8,
   };
 }
 
@@ -65,7 +63,6 @@ function applyEasy(card) {
 
 function isNew(card) { return !card.sm2IntroducedDate; }
 function isDueReview(card) { if (isNew(card)) return false; return card.sm2NextReview <= todayStr(); }
-function isDue(card) { if (!card.sm2NextReview) return true; return card.sm2NextReview <= todayStr(); }
 
 function calcStreak(reviewLog) {
   let streak = 0;
@@ -79,6 +76,13 @@ function calcStreak(reviewLog) {
   return streak;
 }
 
+function buildDueCards(filteredCards, newCardsRemaining, today) {
+  const relearningCards = filteredCards.filter((c) => c.sm2Relearning === true);
+  const dueReviewCards = filteredCards.filter((c) => !c.sm2Relearning && isDueReview(c));
+  const newCardsForToday = filteredCards.filter(isNew).slice(0, newCardsRemaining);
+  return [...relearningCards, ...dueReviewCards, ...newCardsForToday];
+}
+
 export function useFlashcards() {
   const saved = loadAppData();
   const [cards, setCards] = useState(saved?.cards ?? []);
@@ -87,6 +91,8 @@ export function useFlashcards() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stats, setStats] = useState(saved?.stats ?? {});
   const [studyMode, setStudyMode] = useState(null);
+  const [sessionQueue, setSessionQueue] = useState([]);
+  const [sessionFinished, setSessionFinished] = useState(false);
   const [newCardsLimit, setNewCardsLimit] = useState(saved?.newCardsLimit ?? DEFAULT_NEW_LIMIT);
   const [reviewLog, setReviewLog] = useState(saved?.reviewLog ?? {});
   const [settings, setSettings] = useState({ ...DEFAULT_SETTINGS, ...saved?.settings });
@@ -94,10 +100,7 @@ export function useFlashcards() {
   const [sessionHistory, setSessionHistory] = useState(saved?.sessionHistory ?? []);
   const [examAnswers, setExamAnswers] = useState([]);
   const [examFinished, setExamFinished] = useState(false);
-  const [pomodoroRemaining, setPomodoroRemaining] = useState(null);
   const sessionStartRef = useRef(null);
-  const pomodoroTimerRef = useRef(null);
-  const reviewedLeechRef = useRef(false);
 
   const today = todayStr();
   const POINTS_CORRECT = 10;
@@ -116,22 +119,16 @@ export function useFlashcards() {
 
   const newIntroducedToday = filteredCards.filter((c) => c.sm2IntroducedDate === today).length;
   const newCardsRemaining = Math.max(0, newCardsLimit - newIntroducedToday);
+  const dueCards = buildDueCards(filteredCards, newCardsRemaining, today);
   const relearningCards = filteredCards.filter((c) => c.sm2Relearning === true);
-  const dueReviewCards = filteredCards.filter((c) => !c.sm2Relearning && isDueReview(c));
-  const newCardsForToday = filteredCards.filter(isNew).slice(0, newCardsRemaining);
-  const dueCards = [...relearningCards, ...dueReviewCards, ...newCardsForToday];
-  const leechCards = cards.filter((c) => c.sm2Leech === true);
   const errorCards = filteredCards.filter((c) => c.firstAttemptResult === 'wrong' || c.sm2Relearning);
 
-  function getSessionCards() {
-    switch (studyMode) {
+  function cardsForMode(mode) {
+    switch (mode) {
       case 'review':
-      case 'pomodoro':
         return dueCards;
       case 'errors':
         return errorCards;
-      case 'leeches':
-        return filteredCards.filter((c) => c.sm2Leech || (c.sm2Lapses ?? 0) >= 3);
       case 'exam':
         return filteredCards;
       default:
@@ -139,9 +136,12 @@ export function useFlashcards() {
     }
   }
 
-  const sessionCards = getSessionCards();
-  const activeCard = sessionCards[currentCard] ?? null;
-  const reviewMode = studyMode === 'review' || studyMode === 'pomodoro';
+  const sessionCards = studyMode === 'exam'
+    ? filteredCards
+    : sessionQueue.map((id) => cards.find((c) => c.id === id)).filter(Boolean);
+
+  const activeCard = sessionFinished ? null : (sessionCards[currentCard] ?? null);
+  const reviewMode = studyMode === 'review';
 
   const totalCorrect = Object.values(stats).reduce((a, i) => a + i.correct, 0);
   const totalWrong = Object.values(stats).reduce((a, i) => a + i.wrong, 0);
@@ -154,7 +154,10 @@ export function useFlashcards() {
     ? Math.round((attemptedCards.filter((c) => c.firstAttemptResult === 'correct').length / attemptedCards.length) * 100)
     : null;
 
-  const progress = sessionCards.length > 0 ? Math.round(((currentCard + 1) / sessionCards.length) * 100) : 0;
+  const progress = sessionCards.length > 0
+    ? Math.round(((Math.min(currentCard + 1, sessionCards.length)) / sessionCards.length) * 100)
+    : 0;
+
   const insights = computeInsights({ cards, stats, reviewLog, sessionHistory });
 
   function initSm2Fields(card) {
@@ -218,13 +221,13 @@ export function useFlashcards() {
   function endSession() {
     if (sessionStartRef.current) {
       const durationMs = Date.now() - sessionStartRef.current;
-      setSessionHistory((prev) => [...prev, { date: new Date().toISOString(), durationMs, mode: studyMode, cardsReviewed: currentCard + 1 }]);
+      const reviewed = sessionFinished ? sessionQueue.length : currentCard + 1;
+      setSessionHistory((prev) => [...prev, { date: new Date().toISOString(), durationMs, mode: studyMode, cardsReviewed: reviewed }]);
       sessionStartRef.current = null;
     }
-    if (pomodoroTimerRef.current) clearInterval(pomodoroTimerRef.current);
-    pomodoroTimerRef.current = null;
-    setPomodoroRemaining(null);
     setStudyMode(null);
+    setSessionQueue([]);
+    setSessionFinished(false);
     setCurrentCard(0);
     setFlipped(false);
     setExamFinished(false);
@@ -232,34 +235,19 @@ export function useFlashcards() {
   }
 
   function startMode(mode) {
+    const queue = cardsForMode(mode).map((c) => c.id);
     setStudyMode(mode);
+    setSessionQueue(mode === 'exam' ? [] : queue);
+    setSessionFinished(false);
     setCurrentCard(0);
     setFlipped(false);
     setExamFinished(false);
     setExamAnswers([]);
     sessionStartRef.current = Date.now();
-    reviewedLeechRef.current = false;
-
-    if (mode === 'pomodoro') {
-      const end = Date.now() + POMODORO_MS;
-      pomodoroTimerRef.current = setInterval(() => {
-        const left = end - Date.now();
-        if (left <= 0) {
-          clearInterval(pomodoroTimerRef.current);
-          pomodoroTimerRef.current = null;
-          setPomodoroRemaining(0);
-          endSession();
-        } else {
-          setPomodoroRemaining(left);
-        }
-      }, 1000);
-    }
   }
 
   const startReview = () => startMode('review');
   const startErrors = () => startMode('errors');
-  const startLeeches = () => startMode('leeches');
-  const startPomodoro = () => startMode('pomodoro');
   const startExam = () => startMode('exam');
   const stopReview = endSession;
 
@@ -300,7 +288,7 @@ export function useFlashcards() {
         dailyGoal: settings.dailyGoal,
         dailyReviewsToday,
         level,
-        reviewedLeech: reviewedLeechRef.current,
+        reviewedLeech: false,
         importedDeck: false,
       });
       return { ...g, xp, level, dailyReviewsToday, lastStudyDate: today, achievements };
@@ -308,9 +296,7 @@ export function useFlashcards() {
   }
 
   function rate(applyFn, isCorrect, rating) {
-    if (!activeCard || studyMode === 'exam') return;
-
-    if (activeCard.sm2Leech) reviewedLeechRef.current = true;
+    if (!activeCard || studyMode === 'exam' || sessionFinished) return;
 
     setCards((prev) =>
       prev.map((c) => {
@@ -336,7 +322,13 @@ export function useFlashcards() {
     });
 
     applyGamification(rating, isCorrect);
-    goToNext();
+
+    if (currentCard >= sessionQueue.length - 1) {
+      setSessionFinished(true);
+      setFlipped(false);
+    } else {
+      goToNext();
+    }
   }
 
   const markAgain = () => rate(applyAgain, false, 'again');
@@ -369,15 +361,15 @@ export function useFlashcards() {
   return {
     activeCard, filteredCards, sessionCards, dueCards, categories, selectedCategory,
     currentCard, flipped, stats, totalCorrect, totalWrong, totalScore, progress,
-    reviewMode, studyMode, newCardsLimit, newCardsRemaining, newIntroducedToday,
-    setNewCardsLimit, reviewLog, retentionRate, relearningCards, leechCards, errorCards,
+    reviewMode, studyMode, sessionFinished, newCardsLimit, newCardsRemaining, newIntroducedToday,
+    setNewCardsLimit, reviewLog, retentionRate, relearningCards, errorCards,
     addCard, addCards, editCard, goToNext, goToPrevious,
     markAgain, markHard, markGood, markEasy, markCorrect, markWrong,
     changeCategory, toggleFlip, startReview, stopReview,
-    startErrors, startLeeches, startPomodoro, startExam, finishExam,
+    startErrors, startExam, finishExam,
     examAnswers, examFinished, recordExamAnswer, closeExamResults,
     settings, updateSettings, completeOnboarding,
     gamification, insights, streak, totalReviews, sessionHistory,
-    pomodoroRemaining, speak,
+    speak,
   };
 }

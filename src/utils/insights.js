@@ -14,8 +14,8 @@ export function computeInsights({ cards, stats, reviewLog, sessionHistory }) {
 
   const worstCategories = categoryRanking.slice(0, 3).filter((c) => c.correct + c.wrong > 0);
 
-  const topLeeches = cards
-    .filter((c) => (c.sm2Lapses ?? 0) > 0 || c.sm2Leech)
+  const difficultCards = cards
+    .filter((c) => (c.sm2Lapses ?? 0) > 0)
     .sort((a, b) => (b.sm2Lapses ?? 0) - (a.sm2Lapses ?? 0))
     .slice(0, 5)
     .map((c) => ({
@@ -23,7 +23,6 @@ export function computeInsights({ cards, stats, reviewLog, sessionHistory }) {
       question: c.question.slice(0, 60) + (c.question.length > 60 ? '...' : ''),
       category: c.category,
       lapses: c.sm2Lapses ?? 0,
-      isLeech: c.sm2Leech,
     }));
 
   const weekAgo = new Date();
@@ -46,7 +45,7 @@ export function computeInsights({ cards, stats, reviewLog, sessionHistory }) {
 
   return {
     worstCategories,
-    topLeeches,
+    difficultCards,
     avgSessionMin,
     recommendation,
     totalReviews,

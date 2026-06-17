@@ -2,7 +2,8 @@ import { ACHIEVEMENTS } from '../utils/gamification';
 import { HeatmapCalendar } from './HeatmapCalendar';
 
 export function Dashboard({ insights, gamification, streak, categoryRanking, reviewLog }) {
-  const { worstCategories, topLeeches, avgSessionMin, recommendation } = insights;
+  const { worstCategories, avgSessionMin, recommendation } = insights;
+  const difficultCards = insights.difficultCards ?? [];
 
   return (
     <div className="space-y-6">
@@ -49,15 +50,15 @@ export function Dashboard({ insights, gamification, streak, categoryRanking, rev
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-xl">
-          <h3 className="font-bold text-lg text-orange-600 mb-4">🩸 Cards problemáticos (leeches)</h3>
-          {topLeeches.length === 0 ? (
-            <p className="text-slate-400 text-sm">Nenhum card problemático ainda.</p>
+          <h3 className="font-bold text-lg text-orange-600 mb-4">📌 Cards com mais erros</h3>
+          {difficultCards.length === 0 ? (
+            <p className="text-slate-400 text-sm">Nenhum card com erros registrados ainda.</p>
           ) : (
             <div className="space-y-2">
-              {topLeeches.map((c) => (
+              {difficultCards.map((c) => (
                 <div key={c.id} className="text-sm p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50">
                   <p className="font-medium text-slate-700 dark:text-slate-200 truncate">{c.question}</p>
-                  <p className="text-xs text-slate-400">{c.category} · {c.lapses} lapses {c.isLeech && '🩸'}</p>
+                  <p className="text-xs text-slate-400">{c.category} · {c.lapses} erros</p>
                 </div>
               ))}
             </div>

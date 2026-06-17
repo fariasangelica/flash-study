@@ -228,12 +228,7 @@ export function FlashCard({
                 🔄 Reaprendendo
               </span>
             )}
-            {activeCard.sm2Leech && (
-              <span className="bg-red-100 text-red-600 px-3 py-1.5 rounded-full text-xs font-bold" title="Card difícil — errado 8+ vezes">
-                🩸 Leech
-              </span>
-            )}
-            {(activeCard.sm2Lapses ?? 0) > 0 && !activeCard.sm2Leech && (
+            {(activeCard.sm2Lapses ?? 0) > 0 && (
               <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[10px] font-semibold">
                 {activeCard.sm2Lapses} lapse{activeCard.sm2Lapses > 1 ? 's' : ''}
               </span>

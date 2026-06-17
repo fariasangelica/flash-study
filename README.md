@@ -8,8 +8,6 @@ App de flashcards com repetição espaçada (algoritmo SM-2), gamificação e im
 - **Revisão SM-2** — fila inteligente com cards vencidos, novos (limite diário) e reaprendizado
 - **Modo prova** — simula prova sem revelar a resposta; resultado com percentual de acertos
 - **Só erros** — revisa cards que você errou ou está reaprendendo
-- **Só leeches** — foco em cards muito difíceis (8+ lapses)
-- **Pomodoro 25 min** — sessão de revisão com timer
 - **Modo foco** — tela cheia para estudar sem distrações (revisão e prova)
 - Avaliação com 4 botões: De novo, Difícil, Bom, Fácil
 
