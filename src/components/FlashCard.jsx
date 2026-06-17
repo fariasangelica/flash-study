@@ -142,6 +142,7 @@ export function FlashCard({
   focusMode = false,
   onToggleFocus,
   hideProgress = false,
+  inStudySession = false,
 }) {
   const [editing, setEditing] = useState(false);
 
@@ -155,6 +156,15 @@ export function FlashCard({
   }, [activeCard?.id, flipped, handsFree]);
 
   if (!activeCard) {
+    if (inStudySession) {
+      return (
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-10 text-center shadow-2xl">
+          <p className="text-5xl mb-4">🎉</p>
+          <h2 className="text-2xl font-bold text-slate-700 dark:text-slate-100 mb-2">Sessão concluída!</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Carregando...</p>
+        </div>
+      );
+    }
     return (
       <div className="bg-white rounded-3xl p-10 text-center shadow-2xl">
         <h2 className="text-3xl font-bold text-slate-700 mb-4">

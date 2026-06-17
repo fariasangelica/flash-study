@@ -8,13 +8,28 @@ const MIN_EASE = 1.3;
 const DEFAULT_NEW_LIMIT = 20;
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function addDays(dateStr, days) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  const ny = date.getFullYear();
+  const nm = String(date.getMonth() + 1).padStart(2, '0');
+  const nd = String(date.getDate()).padStart(2, '0');
+  return `${ny}-${nm}-${nd}`;
+}
+
+/** Garante que o card não volte na fila do mesmo dia após acerto. */
+function ensureNotDueToday(dateStr) {
+  const today = todayStr();
+  if (!dateStr || dateStr <= today) return addDays(today, 1);
+  return dateStr;
 }
 
 function calcInterval(reps, prevInterval, ease) {
@@ -42,7 +57,7 @@ function applyHard(card) {
   const reps = Math.max(1, (card.sm2Reps ?? 0) + 1);
   const prev = card.sm2Interval ?? 1;
   const interval = Math.max(1, Math.round(calcInterval(reps, prev, ease) * 1.2));
-  return { ...card, sm2Reps: reps, sm2Ease: Math.max(MIN_EASE, ease - 0.15), sm2Interval: interval, sm2NextReview: addDays(todayStr(), interval), sm2Relearning: false };
+  return { ...card, sm2Reps: reps, sm2Ease: Math.max(MIN_EASE, ease - 0.15), sm2Interval: interval, sm2NextReview: ensureNotDueToday(addDays(todayStr(), interval)), sm2Relearning: false };
 }
 
 function applyGood(card) {
@@ -50,7 +65,7 @@ function applyGood(card) {
   const reps = (card.sm2Reps ?? 0) + 1;
   const prev = card.sm2Interval ?? 1;
   const interval = calcInterval(reps, prev, ease);
-  return { ...card, sm2Reps: reps, sm2Ease: ease, sm2Interval: interval, sm2NextReview: addDays(todayStr(), interval), sm2Relearning: false };
+  return { ...card, sm2Reps: reps, sm2Ease: ease, sm2Interval: interval, sm2NextReview: ensureNotDueToday(addDays(todayStr(), interval)), sm2Relearning: false };
 }
 
 function applyEasy(card) {
@@ -58,7 +73,7 @@ function applyEasy(card) {
   const reps = (card.sm2Reps ?? 0) + 1;
   const prev = card.sm2Interval ?? 1;
   const interval = Math.round(calcInterval(reps, prev, ease) * 1.3);
-  return { ...card, sm2Reps: reps, sm2Ease: Math.min(3.0, ease + 0.15), sm2Interval: interval, sm2NextReview: addDays(todayStr(), interval), sm2Relearning: false };
+  return { ...card, sm2Reps: reps, sm2Ease: Math.min(3.0, ease + 0.15), sm2Interval: interval, sm2NextReview: ensureNotDueToday(addDays(todayStr(), interval)), sm2Relearning: false };
 }
 
 function isNew(card) { return !card.sm2IntroducedDate; }
@@ -140,7 +155,10 @@ export function useFlashcards() {
     ? filteredCards
     : sessionQueue.map((id) => cards.find((c) => c.id === id)).filter(Boolean);
 
-  const activeCard = sessionFinished ? null : (sessionCards[currentCard] ?? null);
+  const sessionComplete = sessionFinished
+    || (studyMode && studyMode !== 'exam' && sessionQueue.length > 0 && currentCard >= sessionCards.length);
+
+  const activeCard = sessionComplete ? null : (sessionCards[currentCard] ?? null);
   const reviewMode = studyMode === 'review';
 
   const totalCorrect = Object.values(stats).reduce((a, i) => a + i.correct, 0);
@@ -296,7 +314,7 @@ export function useFlashcards() {
   }
 
   function rate(applyFn, isCorrect, rating) {
-    if (!activeCard || studyMode === 'exam' || sessionFinished) return;
+    if (!activeCard || studyMode === 'exam' || sessionComplete) return;
 
     setCards((prev) =>
       prev.map((c) => {
@@ -323,7 +341,8 @@ export function useFlashcards() {
 
     applyGamification(rating, isCorrect);
 
-    if (currentCard >= sessionQueue.length - 1) {
+    const isLast = currentCard >= sessionCards.length - 1;
+    if (isLast) {
       setSessionFinished(true);
       setFlipped(false);
     } else {
@@ -361,7 +380,7 @@ export function useFlashcards() {
   return {
     activeCard, filteredCards, sessionCards, dueCards, categories, selectedCategory,
     currentCard, flipped, stats, totalCorrect, totalWrong, totalScore, progress,
-    reviewMode, studyMode, sessionFinished, newCardsLimit, newCardsRemaining, newIntroducedToday,
+    reviewMode, studyMode, sessionFinished, sessionComplete, newCardsLimit, newCardsRemaining, newIntroducedToday,
     setNewCardsLimit, reviewLog, retentionRate, relearningCards, errorCards,
     addCard, addCards, editCard, goToNext, goToPrevious,
     markAgain, markHard, markGood, markEasy, markCorrect, markWrong,

@@ -7,7 +7,13 @@ export function computeInsights({ cards, stats, reviewLog, sessionHistory }) {
       const total = s.correct + s.wrong;
       const rate = total > 0 ? Math.round((s.correct / total) * 100) : 100;
       const catCards = cards.filter((c) => c.category === cat);
-      const due = catCards.filter((c) => !c.sm2NextReview || c.sm2NextReview <= new Date().toISOString().slice(0, 10)).length;
+      const due = catCards.filter((c) => {
+        if (!c.sm2IntroducedDate) return true;
+        if (c.sm2Relearning) return true;
+        const today = new Date();
+        const todayLocal = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        return c.sm2NextReview && c.sm2NextReview <= todayLocal;
+      }).length;
       return { category: cat, rate, wrong: s.wrong, correct: s.correct, due, score: s.score };
     })
     .sort((a, b) => a.rate - b.rate);

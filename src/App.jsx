@@ -56,6 +56,10 @@ export default function App() {
   }, [fc.activeCard]);
 
   useEffect(() => {
+    if (fc.sessionComplete) setFocusMode(false);
+  }, [fc.sessionComplete]);
+
+  useEffect(() => {
     if (!focusMode) return undefined;
     document.body.style.overflow = 'hidden';
     const onKey = (e) => { if (e.key === 'Escape') setFocusMode(false); };
@@ -110,6 +114,7 @@ export default function App() {
     onEdit: fc.editCard,
     speak: fc.speak,
     handsFree: fc.settings.handsFree,
+    inStudySession: !!fc.studyMode && fc.studyMode !== 'exam',
     onToggleFocus: fc.activeCard && !fc.examFinished
       ? () => setFocusMode(true)
       : undefined,
@@ -133,11 +138,18 @@ export default function App() {
     <ExamMode examFinished examAnswers={fc.examAnswers} sessionCards={fc.sessionCards} onFinish={fc.closeExamResults} />
   ) : showExam ? (
     <ExamMode {...examModeProps} />
-  ) : studyActive && (fc.sessionFinished || fc.sessionCards.length === 0) ? (
+  ) : studyActive && fc.sessionComplete ? (
     <div className="bg-white dark:bg-slate-800 rounded-3xl p-12 text-center shadow-xl">
       <p className="text-5xl mb-4">🎉</p>
-      <h2 className="text-2xl font-bold mb-2">Sessão concluída!</h2>
-      <button onClick={fc.stopReview} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold mt-4">Voltar</button>
+      <h2 className="text-2xl font-bold mb-2 dark:text-slate-100">Sessão concluída!</h2>
+      <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+        {fc.dueCards.length === 0
+          ? 'Todos os cards de hoje foram revisados.'
+          : `${fc.dueCards.length} card(s) ainda pendente(s) para outra sessão.`}
+      </p>
+      <button onClick={fc.stopReview} className="bg-indigo-600 text-white px-6 py-3 rounded-2xl font-bold mt-2 hover:bg-indigo-700 transition-colors">
+        Voltar
+      </button>
     </div>
   ) : (
     <FlashCard {...flashCardProps} />
@@ -316,7 +328,7 @@ export default function App() {
         )}
       </div>
 
-      {focusMode && fc.activeCard && tab === 'study' && !fc.examFinished && (
+      {focusMode && fc.activeCard && !fc.sessionComplete && tab === 'study' && !fc.examFinished && (
         <StudyFocusOverlay
           onExit={() => setFocusMode(false)}
           currentCard={fc.currentCard}
