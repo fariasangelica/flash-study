@@ -11,6 +11,9 @@ export function ImportHub({
   onCsvFile,
   csvLoading,
   csvError,
+  onJsonFile,
+  jsonLoading,
+  jsonError,
   onAiGenerate,
   onTextParse,
   existingCategories = [],
@@ -52,7 +55,7 @@ export function ImportHub({
     ? 'p-4 rounded-2xl border border-slate-200 dark:border-slate-600'
     : 'bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-6';
 
-  const isBusy = aiLoading || docLoading;
+  const isBusy = aiLoading || docLoading || jsonLoading;
 
   let buttonLabel = '✨ Gerar com IA';
   if (aiLoading) buttonLabel = aiProgress ?? 'Gerando...';
@@ -74,6 +77,18 @@ export function ImportHub({
         </label>
         {csvLoading && <p className="text-xs text-slate-400 mt-2">Lendo...</p>}
         {csvError && <p className="text-xs text-red-500 mt-2">⚠️ {csvError}</p>}
+      </div>
+
+      <div className={sectionClass}>
+        {!bare && <h2 className="text-lg font-bold mb-3 text-indigo-700 dark:text-indigo-300">📦 JSON</h2>}
+        <label className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-5 text-center cursor-pointer hover:border-indigo-300 block">
+          <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => onJsonFile?.(e.target.files[0])} />
+          <p className="text-2xl mb-1">📦</p>
+          <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">Importar JSON</p>
+          <p className="text-xs text-slate-400 mt-1">Array de cards ou {'{ "cards": [...] }'}</p>
+        </label>
+        {jsonLoading && <p className="text-xs text-slate-400 mt-2">Lendo...</p>}
+        {jsonError && <p className="text-xs text-red-500 mt-2">⚠️ {jsonError}</p>}
       </div>
 
       <div className={sectionClass}>

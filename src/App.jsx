@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useFlashcards } from './hooks/useFlashcards';
 import { usePdfExtractor } from './hooks/usePdfExtractor';
 import { useCsvImporter } from './hooks/useCsvImporter';
+import { useJsonImporter } from './hooks/useJsonImporter';
 import { decodeDeckFromUrl } from './utils/shareDeck';
 import { suggestCategory } from './utils/categorySuggest';
 import { StatsBar } from './components/StatsBar';
@@ -38,7 +39,10 @@ export default function App() {
   const fc = useFlashcards();
   const docImporter = usePdfExtractor();
   const csvImporter = useCsvImporter();
-  const modal = modalSource === 'doc' ? docImporter : csvImporter;
+  const jsonImporter = useJsonImporter();
+  const importers = { doc: docImporter, csv: csvImporter, json: jsonImporter };
+  const modal = importers[modalSource] ?? docImporter;
+  const isImportModalOpen = docImporter.isModalOpen || csvImporter.isModalOpen || jsonImporter.isModalOpen;
 
   useEffect(() => {
     const shared = decodeDeckFromUrl();
@@ -242,6 +246,9 @@ export default function App() {
                       onCsvFile={(f) => { setModalSource('csv'); csvImporter.processFile(f); }}
                       csvLoading={csvImporter.isLoading}
                       csvError={csvImporter.error}
+                      onJsonFile={(f) => { setModalSource('json'); jsonImporter.processFile(f); }}
+                      jsonLoading={jsonImporter.isLoading}
+                      jsonError={jsonImporter.error}
                       onTextParse={(text, category) => {
                         setModalSource('doc');
                         setImportCategory(category);
@@ -355,7 +362,7 @@ export default function App() {
         </StudyFocusOverlay>
       )}
 
-      {(docImporter.isModalOpen || csvImporter.isModalOpen) && (
+      {isImportModalOpen && (
         <PdfReviewModal
           candidates={modal.candidates}
           onToggle={modal.toggleCandidate}

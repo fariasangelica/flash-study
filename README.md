@@ -16,6 +16,7 @@ App de flashcards com repetição espaçada (algoritmo SM-2), gamificação e im
 - **Importar DOCX** com formato `Pergunta:` / `Resposta:`
 - **Colar texto** — extração automática do formato estruturado ou geração via IA
 - **CSV / Excel** — colunas Pergunta, Resposta, Categoria
+- **JSON** — array de cards ou `{ "cards": [...] }`
 - **Compartilhar deck** — link para importar cards em outro navegador
 - Sugestão automática de categoria por palavras-chave
 
@@ -60,7 +61,7 @@ npm install
 ## Uso rápido
 
 1. **Criar** — aba lateral *Criar* para adicionar cards
-2. **Importar** — DOCX, CSV/Excel ou colar texto (escolha a categoria antes)
+2. **Importar** — DOCX, CSV/Excel, JSON ou colar texto (escolha a categoria antes)
 3. **Estudar** — escolha um modo (Revisão, Prova, etc.) e use o **Modo foco** se quiser tela cheia
 4. **Config** — chave Gemini, dark mode, backup JSON
 
