@@ -28,7 +28,7 @@ export function SettingsPanel({ settings, onUpdate, cards, stats, reviewLog, gam
         importAppData(reader.result);
         window.location.reload();
       } catch {
-        alert('Arquivo inválido.');
+        alert('Arquivo JSON inválido. Use o backup exportado em Config → Exportar backup.');
       }
     };
     reader.readAsText(file);
@@ -117,6 +117,7 @@ export function SettingsPanel({ settings, onUpdate, cards, stats, reviewLog, gam
       </div>
       <p className="text-xs text-slate-400">
         Backup compartilha cards e progresso, mas nunca a chave Gemini de ninguém.
+        Backups só com pontuação/XP (sem cards) também podem ser importados aqui — seus flashcards atuais são mantidos.
       </p>
     </div>
   );

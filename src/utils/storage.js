@@ -108,19 +108,35 @@ export function exportAppData(data) {
 
 export function importAppData(json) {
   const parsed = JSON.parse(json);
-  // Nunca importa chave de outra pessoa — mantém só a chave local deste dispositivo
+  const existing = loadAppData();
   const safeSettings = stripSensitiveSettings(parsed.settings ?? {});
 
-  saveAppData({
-    ...parsed,
-    settings: safeSettings,
-  });
+  const hasCards = Array.isArray(parsed.cards) && parsed.cards.length > 0;
 
-  return {
-    ...parsed,
+  const merged = {
+    cards: hasCards ? parsed.cards : (existing?.cards ?? []),
+    stats: parsed.stats ?? existing?.stats ?? {},
+    reviewLog: parsed.reviewLog ?? existing?.reviewLog ?? {},
     settings: {
       ...DEFAULT_SETTINGS,
+      ...stripSensitiveSettings(existing?.settings ?? {}),
       ...safeSettings,
+    },
+    gamification: {
+      ...DEFAULT_GAMIFICATION,
+      ...existing?.gamification,
+      ...parsed.gamification,
+    },
+    sessionHistory: parsed.sessionHistory ?? existing?.sessionHistory ?? [],
+    newCardsLimit: parsed.newCardsLimit ?? existing?.newCardsLimit ?? 20,
+  };
+
+  saveAppData(merged);
+
+  return {
+    ...merged,
+    settings: {
+      ...merged.settings,
       geminiApiKey: loadGeminiApiKey(),
     },
   };

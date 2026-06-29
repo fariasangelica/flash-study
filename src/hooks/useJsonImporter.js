@@ -23,8 +23,27 @@ function normalizeCard(raw, index, fallbackCategory) {
   };
 }
 
+export function isProgressBackup(parsed) {
+  return !!(parsed.stats || parsed.reviewLog || parsed.gamification || parsed.sessionHistory)
+    && (!Array.isArray(parsed.cards) || parsed.cards.length === 0);
+}
+
 export function parseCardsFromJson(text, fallbackCategory = '') {
-  const parsed = JSON.parse(text);
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('JSON inválido. Verifique se o arquivo está bem formatado.');
+  }
+
+  if (isProgressBackup(parsed)) {
+    throw new Error(
+      'Este JSON é um backup de progresso (pontuação, XP, histórico) — não contém flashcards. ' +
+      'Vá em Config → Importar backup para restaurar. ' +
+      'Para importar perguntas aqui, use um JSON com { "cards": [...] }.'
+    );
+  }
+
   let items = [];
 
   if (Array.isArray(parsed)) {
@@ -34,7 +53,9 @@ export function parseCardsFromJson(text, fallbackCategory = '') {
   } else if (parsed.deck?.cards && Array.isArray(parsed.deck.cards)) {
     items = parsed.deck.cards;
   } else {
-    throw new Error('Formato não reconhecido. Use um array de cards ou { "cards": [...] }.');
+    throw new Error(
+      'Formato não reconhecido. Use um array de cards ou { "cards": [{ "question": "...", "answer": "..." }] }.'
+    );
   }
 
   const cards = items

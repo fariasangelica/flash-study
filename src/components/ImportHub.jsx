@@ -85,7 +85,8 @@ export function ImportHub({
           <input type="file" accept=".json,application/json" className="hidden" onChange={(e) => onJsonFile?.(e.target.files[0])} />
           <p className="text-2xl mb-1">📦</p>
           <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">Importar JSON</p>
-          <p className="text-xs text-slate-400 mt-1">Array de cards ou {'{ "cards": [...] }'}</p>
+          <p className="text-xs text-slate-400 mt-1">Lista de cards: {'{ "cards": [...] }'}</p>
+          <p className="text-xs text-slate-400 mt-0.5">Backup de progresso → use Config</p>
         </label>
         {jsonLoading && <p className="text-xs text-slate-400 mt-2">Lendo...</p>}
         {jsonError && <p className="text-xs text-red-500 mt-2">⚠️ {jsonError}</p>}
